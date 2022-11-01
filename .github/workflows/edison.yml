@@ -1,0 +1,54 @@
+name: 'Build edison image'
+
+on:
+  workflow_dispatch:
+
+env:
+  DEPLOY: 'deploy'
+
+jobs:
+  yocto:
+    name: Build yocto deploy
+    runs-on: ubuntu-latest
+    outputs:
+      DEPLOY: ${{ env.DEPLOY }}
+    steps:
+      - name: Disable AppArmor on the GitHub runner
+        uses: cisagov/action-disable-apparmor@v1.0.0
+      - name: Checkout Edsion layer
+        uses: actions/checkout@v4
+        with:
+          repository: edison-fw/meta-intel-edison
+          ref: master
+          path: meta-intel-edison
+      - name: Checkout recipe
+        uses: actions/checkout@v4
+        with:
+          ref: recipe
+          path: recipe
+      - name: Setup
+        run: |
+          sudo apt update
+          sudo apt install -y gawk wget git-core diffstat unzip texinfo gcc-multilib build-essential chrpath socat cpio python3 libsdl1.2-dev libelf-dev xterm
+          sed -i 's/^DEFAULTTUNE\b/#DEFAULTTUNE/' meta-intel-edison/meta-intel-edison-bsp/conf/machine/edison.conf
+          sed -i 's/^KBUILD_DEFCONFIG\b.*$/KBUILD_DEFCONFIG="x86_64_defconfig"/' meta-intel-edison/meta-intel-edison-bsp/conf/machine/edison.conf
+          sed -i 's/^ROOTFS_POSTPROCESS_COMMAND\b/#ROOTFS_POSTPROCESS_COMMAND/' meta-intel-edison/meta-intel-edison-distro/recipes-core/images/edison-image-minimal.bb
+          ln -srv meta-intel-edison/utils/Makefile.mk Makefile
+          ln -srv recipe/custom.bb meta-intel-edison/meta-intel-edison-distro/recipes-core/images/custom.bb
+          make setup
+          echo 'INHERIT += "rm_work"' >> out/current/build/conf/local.conf
+      - name: Build
+        run: bash -c "source out/current/poky/oe-init-build-env out/current/build; bitbake custom;"
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.DEPLOY }}
+          path: |
+            out/current/build/tmp/deploy/deb
+            out/current/build/tmp/deploy/images
+  distro:
+    needs: yocto
+    uses: ./.github/workflows/distro.yml
+    with:
+      deploy-name: ${{ needs.yocto.outputs.DEPLOY }}
+      deploy-run-id: ${{ github.run_id }}

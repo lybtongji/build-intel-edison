@@ -1,0 +1,63 @@
+name: 'Build distro image'
+
+on:
+  workflow_call:
+    inputs:
+      deploy-name:
+        default: deploy
+        description: ''
+        required: true
+        type: string
+      deploy-run-id:
+        description: ''
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      deploy-name:
+        default: deploy
+        description: ''
+        required: true
+        type: string
+      deploy-run-id:
+        description: ''
+        required: true
+        type: string
+
+jobs:
+  distro:
+    name: Build ${{ matrix.target }} image
+    runs-on: ubuntu-latest
+    env:
+      DEPLOY: ${{ inputs.deploy-name }}
+      DISTRO: ${{ matrix.target }}
+      IMAGE_EXT4: 'rootfs.ext4'
+      ROOTFS: 'rootfs'
+      SCRIPT: 'script'
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - debian
+          - ubuntu
+    steps:
+      - name: Disable AppArmor on the GitHub runner
+        uses: cisagov/action-disable-apparmor@v1.0.0
+      - name: Checkout script
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.SCRIPT }}
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.deploy-run-id }}
+          name: ${{ env.DEPLOY }}
+          path: ${{ env.DEPLOY }}
+      - name: Run
+        run: sudo -E bash -xe ${SCRIPT}/distros/${DISTRO}/run.sh
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}-image.ext4
+          path: ${{ env.IMAGE_EXT4 }}

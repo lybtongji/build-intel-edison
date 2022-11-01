@@ -1,0 +1,50 @@
+name: 'Build yocto target'
+
+on:
+  workflow_dispatch:
+
+env:
+  SAFE_NAME: unset
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - u-boot
+          # - virtual/kernel
+          - core-image-minimal-initramfs
+    steps:
+      - name: Set GitHub Environment Variables
+        uses: FranzDiebold/github-env-vars-action@v2.7.0
+      - name: Checkout Edsion layer
+        uses: actions/checkout@v4
+        with:
+          repository: edison-fw/meta-intel-edison
+          ref: master
+          path: meta-intel-edison
+      - name: Disable AppArmor on the GitHub runner
+        uses: cisagov/action-disable-apparmor@v1.0.0
+      - name: Setup
+        run: |
+          sudo apt update
+          sudo apt install -y gawk wget git-core diffstat unzip texinfo gcc-multilib build-essential chrpath socat cpio python3 libsdl1.2-dev libelf-dev xterm
+          sed -i 's/^DEFAULTTUNE\b/#DEFAULTTUNE/' meta-intel-edison/meta-intel-edison-bsp/conf/machine/edison.conf
+          sed -i 's/^KBUILD_DEFCONFIG\b.*$/KBUILD_DEFCONFIG="x86_64_defconfig"/' meta-intel-edison/meta-intel-edison-bsp/conf/machine/edison.conf
+          ln -srv meta-intel-edison/utils/Makefile.mk Makefile
+          make setup
+          echo 'INHERIT += "rm_work"' >> out/current/build/conf/local.conf
+      - name: Build
+        run: bash -c "source out/current/poky/oe-init-build-env out/current/build; bitbake ${{ matrix.target }};"
+      - name: Safe name
+        run: echo ${{ matrix.target }} | sed -E 's/[^a-zA-Z0-9_-]/_/g' | echo SAFE_NAME=$(cat) >> $GITHUB_ENV
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.SAFE_NAME }}
+          path: |
+            out/current/build/tmp/deploy/deb
+            out/current/build/tmp/deploy/images
