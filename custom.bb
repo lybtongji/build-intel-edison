@@ -31,5 +31,8 @@ IMAGE_INSTALL:append = " kernel-modules"
 IMAGE_INSTALL:append = " bcm43340-fw"
 IMAGE_INSTALL:append = " bcm43340-addr"
 
+# Add audio firmware
+IMAGE_INSTALL:append = " sof-fw"
+
 # Gadget setup
 IMAGE_INSTALL:append = " gadget"
