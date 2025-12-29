@@ -35,6 +35,8 @@ jobs:
           sed -i 's/^ROOTFS_POSTPROCESS_COMMAND\b/#ROOTFS_POSTPROCESS_COMMAND/' meta-intel-edison/meta-intel-edison-distro/recipes-core/images/edison-image-minimal.bb
           ln -srv meta-intel-edison/utils/Makefile.mk Makefile
           ln -srv recipe/custom.bb meta-intel-edison/meta-intel-edison-distro/recipes-core/images/custom.bb
+          ln -srv recipe/fragment.cfg meta-intel-edison/meta-intel-edison-bsp/recipes-kernel/linux/files/fragment.cfg
+          echo 'SRC_URI:append = " file://fragment.cfg"' >> meta-intel-edison/meta-intel-edison-bsp/recipes-kernel/linux/linux-yocto_lts.bb
           make setup
           echo 'INHERIT += "rm_work"' >> out/current/build/conf/local.conf
       - name: Build
