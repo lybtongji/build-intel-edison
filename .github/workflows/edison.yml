@@ -39,6 +39,7 @@ jobs:
           echo 'SRC_URI:append = " file://fragment.cfg"' >> meta-intel-edison/meta-intel-edison-bsp/recipes-kernel/linux/linux-yocto_lts.bb
           make setup
           echo 'INHERIT += "rm_work"' >> out/current/build/conf/local.conf
+          echo 'KCONF_AUDIT_LEVEL = "2"' >> out/current/build/conf/local.conf
       - name: Build
         run: bash -c "source out/current/poky/oe-init-build-env out/current/build; bitbake custom;"
       - name: Upload artifact
