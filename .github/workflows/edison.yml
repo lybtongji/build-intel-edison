@@ -42,6 +42,13 @@ jobs:
           echo 'KCONF_AUDIT_LEVEL = "2"' >> out/current/build/conf/local.conf
       - name: Build
         run: bash -c "source out/current/poky/oe-init-build-env out/current/build; bitbake custom;"
+      - name: Upload log output
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: ${{ env.DEPLOY }}_kernel_log
+          path: |
+            out/current/build/tmp/work/edison-poky-linux/linux-yocto/lts/temp/log.*
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
