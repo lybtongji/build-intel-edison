@@ -18,7 +18,8 @@ pkgs=(
     dbus
     dbus-user-session
     openssh-server
-    policykit-1
+    # policykit-1
+    polkitd
     sudo
     systemd-resolved
     systemd-timesyncd
