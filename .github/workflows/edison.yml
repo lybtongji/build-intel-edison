@@ -45,6 +45,15 @@ jobs:
           sed -i 's/^ROOTFS_POSTPROCESS_COMMAND\b/#ROOTFS_POSTPROCESS_COMMAND/' meta-intel-edison/meta-intel-edison-distro/recipes-core/images/edison-image-minimal.bb
           ln -srv meta-intel-edison/utils/Makefile.mk Makefile
           ln -srv recipe/custom.bb meta-intel-edison/meta-intel-edison-distro/recipes-core/images/custom.bb
+          # gpg --batch --pinentry-mode loopback --allow-secret-key-import --passphrase-file meta-intel-edison/utils/key/passphrase --quick-gen-key "edison" ed25519 sign 1y
+          # gpg --batch --pinentry-mode loopback --allow-secret-key-import --passphrase-file meta-intel-edison/utils/key/passphrase --output meta-intel-edison/utils/key/meta-intel-edison_pub.gpg --yes --armor --export "edison"
+          # gpg --batch --pinentry-mode loopback --allow-secret-key-import --passphrase-file meta-intel-edison/utils/key/passphrase --output meta-intel-edison/utils/key/meta-intel-edison_secret.gpg --yes --armor --export-secret-key "edison"
+          gpg --batch --pinentry-mode loopback --import meta-intel-edison/utils/key/meta-intel-edison_pub.gpg
+          gpg --batch --pinentry-mode loopback --allow-secret-key-import --passphrase-file meta-intel-edison/utils/key/passphrase --import meta-intel-edison/utils/key/meta-intel-edison_secret.gpg
+          gpg --batch --pinentry-mode loopback --allow-secret-key-import --passphrase-file meta-intel-edison/utils/key/passphrase --quick-set-expire "6449A703BCA9A698055ACB23976A9A3F994268DB" 1y
+          gpg --batch --pinentry-mode loopback --allow-secret-key-import --passphrase-file meta-intel-edison/utils/key/passphrase --output meta-intel-edison/utils/key/meta-intel-edison_pub.gpg --yes --armor --export "6449A703BCA9A698055ACB23976A9A3F994268DB"
+          gpg --batch --pinentry-mode loopback --allow-secret-key-import --passphrase-file meta-intel-edison/utils/key/passphrase --output meta-intel-edison/utils/key/meta-intel-edison_secret.gpg --yes --armor --export-secret-key "6449A703BCA9A698055ACB23976A9A3F994268DB"
+          gpg --batch --yes --pinentry-mode loopback --delete-secret-and-public-key "6449A703BCA9A698055ACB23976A9A3F994268DB"
           make setup
           echo 'INHERIT += "rm_work"' >> out/current/build/conf/local.conf
       - name: Build
