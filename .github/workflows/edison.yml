@@ -1,10 +1,10 @@
-name: 'Build edison image'
+name: "Build edison image"
 
 on:
   workflow_dispatch:
 
 env:
-  DEPLOY: 'deploy'
+  DEPLOY: "deploy"
 
 jobs:
   yocto:
@@ -20,11 +20,11 @@ jobs:
         with:
           root-reserve-mb: 512
           swap-size-mb: 1024
-          remove-dotnet: 'true'
-          remove-android: 'true'
-          remove-haskell: 'true'
-          remove-codeql: 'true'
-          remove-docker-images: 'true'
+          remove-dotnet: "true"
+          remove-android: "true"
+          remove-haskell: "true"
+          remove-codeql: "true"
+          remove-docker-images: "true"
       - name: Checkout Edsion layer
         uses: actions/checkout@v4
         with:
@@ -40,11 +40,20 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y gawk wget git-core diffstat unzip texinfo gcc-multilib build-essential chrpath socat cpio python3 libsdl1.2-dev libelf-dev xterm
+
           sed -i 's/^DEFAULTTUNE\b/#DEFAULTTUNE/' meta-intel-edison/meta-intel-edison-bsp/conf/machine/edison.conf
           sed -i 's/^KBUILD_DEFCONFIG\b.*$/KBUILD_DEFCONFIG="x86_64_defconfig"/' meta-intel-edison/meta-intel-edison-bsp/conf/machine/edison.conf
           sed -i 's/^ROOTFS_POSTPROCESS_COMMAND\b/#ROOTFS_POSTPROCESS_COMMAND/' meta-intel-edison/meta-intel-edison-distro/recipes-core/images/edison-image-minimal.bb
+
           ln -srv meta-intel-edison/utils/Makefile.mk Makefile
           ln -srv recipe/custom.bb meta-intel-edison/meta-intel-edison-distro/recipes-core/images/custom.bb
+
+          # Fix version
+          VERSION=$(grep -oP '^LINUX_VERSION.+"\K[\.\d]+(?=")' meta-intel-edison/meta-intel-edison-bsp/recipes-kernel/linux/linux-yocto_lts.bb)
+          ln -srv meta-intel-edison/meta-intel-edison-bsp/recipes-kernel/linux/linux-yocto_lts.bb meta-intel-edison/meta-intel-edison-bsp/recipes-kernel/linux/linux-yocto_$VERSION.bb
+          echo "PREFERRED_VERSION_linux-yocto = \"$VERSION\"" | tee -a meta-intel-edison/meta-intel-edison-distro/conf/distro/poky-edison.conf
+
+          # Fix GPG
           # gpg --batch --pinentry-mode loopback --allow-secret-key-import --passphrase-file meta-intel-edison/utils/key/passphrase --quick-gen-key "edison" ed25519 sign 1y
           # gpg --batch --pinentry-mode loopback --allow-secret-key-import --passphrase-file meta-intel-edison/utils/key/passphrase --output meta-intel-edison/utils/key/meta-intel-edison_pub.gpg --yes --armor --export "edison"
           # gpg --batch --pinentry-mode loopback --allow-secret-key-import --passphrase-file meta-intel-edison/utils/key/passphrase --output meta-intel-edison/utils/key/meta-intel-edison_secret.gpg --yes --armor --export-secret-key "edison"
@@ -54,6 +63,8 @@ jobs:
           gpg --batch --pinentry-mode loopback --allow-secret-key-import --passphrase-file meta-intel-edison/utils/key/passphrase --output meta-intel-edison/utils/key/meta-intel-edison_pub.gpg --yes --armor --export "6449A703BCA9A698055ACB23976A9A3F994268DB"
           gpg --batch --pinentry-mode loopback --allow-secret-key-import --passphrase-file meta-intel-edison/utils/key/passphrase --output meta-intel-edison/utils/key/meta-intel-edison_secret.gpg --yes --armor --export-secret-key "6449A703BCA9A698055ACB23976A9A3F994268DB"
           gpg --batch --yes --pinentry-mode loopback --delete-secret-and-public-key "6449A703BCA9A698055ACB23976A9A3F994268DB"
+
+          # Setup
           make setup
           echo 'INHERIT += "rm_work"' >> out/current/build/conf/local.conf
       - name: Build
