@@ -17,12 +17,15 @@ pkgs=(
     curl
     dbus
     dbus-user-session
+    gpg
+    lsb-release
     openssh-server
     policykit-1
     sudo
     systemd-resolved
     systemd-timesyncd
     vim
+    wget
     wpasupplicant
 )
 
