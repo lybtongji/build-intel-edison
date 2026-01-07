@@ -48,6 +48,10 @@ jobs:
           ln -srv meta-intel-edison/utils/Makefile.mk Makefile
           ln -srv recipe/custom.bb meta-intel-edison/meta-intel-edison-distro/recipes-core/images/custom.bb
 
+          # Add kernel fragment
+          cp -v recipe/fragment.cfg meta-intel-edison/meta-intel-edison-bsp/recipes-kernel/linux/files/fragment.cfg
+          echo 'SRC_URI += "file://fragment.cfg"' | tee meta-intel-edison/meta-intel-edison-bsp/recipes-kernel/linux/linux-yocto_%.bbappend
+
           # Fix version
           VERSION=$(grep -oP '^LINUX_VERSION.+"\K[\.\d]+(?=")' meta-intel-edison/meta-intel-edison-bsp/recipes-kernel/linux/linux-yocto_lts.bb)
           ln -srv meta-intel-edison/meta-intel-edison-bsp/recipes-kernel/linux/linux-yocto_lts.bb meta-intel-edison/meta-intel-edison-bsp/recipes-kernel/linux/linux-yocto_$VERSION.bb
