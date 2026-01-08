@@ -18,6 +18,18 @@ jobs:
           # - virtual/kernel
           - core-image-minimal-initramfs
     steps:
+      - name: Disable AppArmor on the GitHub runner
+        uses: cisagov/action-disable-apparmor@v1.0.0
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 512
+          swap-size-mb: 1024
+          remove-dotnet: "true"
+          remove-android: "true"
+          remove-haskell: "true"
+          remove-codeql: "true"
+          remove-docker-images: "true"
       - name: Set GitHub Environment Variables
         uses: FranzDiebold/github-env-vars-action@v2.7.0
       - name: Checkout Edsion layer
@@ -26,8 +38,6 @@ jobs:
           repository: edison-fw/meta-intel-edison
           ref: master
           path: meta-intel-edison
-      - name: Disable AppArmor on the GitHub runner
-        uses: cisagov/action-disable-apparmor@v1.0.0
       - name: Setup
         run: |
           sudo apt update
